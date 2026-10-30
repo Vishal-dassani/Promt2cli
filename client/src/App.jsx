@@ -1,22 +1,17 @@
 
 
-import { useEffect, useState } from 'react'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import About from './pages/About.jsx'
+import Contact from './pages/Contact.jsx'
 import Home from './pages/Home.jsx'
 
-const getCurrentPage = () => window.location.hash === '#about' ? 'about' : 'home'
-
-const App = () => {
-  const [currentPage, setCurrentPage] = useState(getCurrentPage)
-
-  useEffect(() => {
-    const handleHashChange = () => setCurrentPage(getCurrentPage())
-
-    window.addEventListener('hashchange', handleHashChange)
-    return () => window.removeEventListener('hashchange', handleHashChange)
-  }, [])
-
-  return currentPage === 'about' ? <About /> : <Home />
-}
+const App = () => (
+  <Routes>
+    <Route path="/" element={<Home />} />
+    <Route path="/about" element={<About />} />
+    <Route path="/contact" element={<Contact />} />
+    <Route path="*" element={<Navigate to="/" replace />} />
+  </Routes>
+)
 
 export default App

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import AboutCard from '../components/AboutCard.jsx'
 import NavBar from '../components/NavBar.jsx'
 
@@ -92,12 +93,12 @@ const About = () => (
           <p className="mt-6 text-xl font-semibold tracking-tight sm:text-2xl">
             Prompt2CLI — Your words, translated to terminal.
           </p>
-          <a
+          <Link
             className="mt-7 inline-flex rounded-xl bg-white px-5 py-3 font-semibold text-violet-700 transition hover:bg-violet-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-            href="#home"
+            to="/"
           >
             Try Prompt2CLI
-          </a>
+          </Link>
         </footer>
       </div>
     </main>
