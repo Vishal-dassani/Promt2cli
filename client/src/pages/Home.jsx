@@ -5,6 +5,12 @@ import PromptInput from '../components/PromptInput.jsx'
 
 const Home = () => {
   const [prompt, setPrompt] = useState('')
+  const [shell, setShell] = useState('powershell')
+  const shellOptions = [
+    { value: 'powershell', label: 'Windows PowerShell / CMD' },
+    { value: 'bash', label: 'Linux (Bash)' },
+    { value: 'zsh', label: 'macOS (Zsh)' },
+  ]
 
   return (
     <div className="min-h-screen bg-[#faf9f7] text-slate-900">
@@ -39,6 +45,28 @@ const Home = () => {
           </p>
 
           <div className="mt-10 rounded-3xl border border-white/80 bg-white/75 p-3 shadow-[0_24px_80px_-32px_rgba(70,50,120,0.28)] backdrop-blur sm:p-5">
+            <fieldset className="mb-4 px-2">
+              <legend className="mb-2 text-sm font-medium text-slate-700">
+                Choose your terminal
+              </legend>
+              <div className="flex flex-wrap gap-2">
+                {shellOptions.map((option) => (
+                  <label key={option.value} className="cursor-pointer">
+                    <input
+                      checked={shell === option.value}
+                      className="peer sr-only"
+                      name="shell"
+                      onChange={() => setShell(option.value)}
+                      type="radio"
+                      value={option.value}
+                    />
+                    <span className="inline-flex min-h-11 items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-violet-300 peer-checked:border-violet-500 peer-checked:bg-violet-50 peer-checked:text-violet-700 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-violet-600">
+                      {option.label}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
             <PromptInput
               onChange={(event) => setPrompt(event.target.value)}
               value={prompt}
