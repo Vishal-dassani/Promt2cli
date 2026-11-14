@@ -5,29 +5,66 @@ const router = express.Router();
 // POST: Generate a terminal command
 router.post('/generate', async (req, res) => {
     try {
-        const { prompt } = req.body;
+        const { prompt, shell = 'powershell' } = req.body;
 
-        if (!prompt || !prompt.trim()) {
+        if (typeof prompt !== 'string' || !prompt.trim()) {
             return res.status(400).json({
                 success: false,
                 error: 'Prompt is required'
             });
         }
 
-        const command = await generateCommand(prompt);
+        if (!['powershell', 'bash', 'zsh'].includes(shell)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Unsupported shell'
+            });
+        }
+
+        const generatedCommand = await generateCommand(prompt, shell);
+        if (typeof generatedCommand.command !== 'string' || !generatedCommand.command.trim()) {
+            return res.status(502).json({
+                success: false,
+                error: `No command was generated for ${shell}`
+            });
+        }
 
         return res.status(200).json({
             success: true,
             prompt,
-            command
+            platform: shell,
+            command: generatedCommand.command,
+            riskAssessment: generatedCommand.riskAssessment
         });
 
     } catch (error) {
         console.error('Command generation failed:', error);
 
-        return res.status(500).json({
+        var statusCode = 500;
+        var errorMessage = 'Failed to generate command';
+
+        if (error && error.name === 'ApiError') {
+            if (Number.isInteger(error.status) && error.status >= 400 && error.status <= 599) {
+                statusCode = error.status;
+            }
+
+            try {
+                const upstreamError = JSON.parse(error.message);
+                const description = upstreamError.error?.message || upstreamError.message;
+                if (typeof description === 'string' && description.trim()) {
+                    errorMessage = description;
+                }
+            } catch {
+                if (typeof error.message === 'string' && error.message.trim()) {
+                    errorMessage = error.message;
+                }
+            }
+        }
+        
+
+        return res.status(statusCode).json({
             success: false,
-            error: 'Failed to generate command'
+            error: errorMessage
         });
     }
 });

@@ -1,5 +1,21 @@
 
-async function generateCommand(prompt) {
+const shells = {
+    powershell: {
+        name: 'Windows PowerShell'
+    },
+    bash: {
+        name: 'Linux Bash'
+    },
+    zsh: {
+        name: 'macOS Zsh'
+    }
+};
+
+async function generateCommand(prompt, shell) {
+    const selectedShell = shells[shell];
+    if (!selectedShell) {
+        throw new Error(`Unsupported shell: ${shell}`);
+    }
 
     const { GoogleGenAI } = await import('@google/genai');
 
@@ -10,70 +26,48 @@ async function generateCommand(prompt) {
     const responseSchema = {
         type: 'OBJECT',
         properties: {
-            commands: {
-                type: 'ARRAY',
-                items: {
-                    type: 'OBJECT',
-                    properties: {
-                        platform: {
-                            type: 'STRING',
-                            enum: [
-                                'windows-powershell',
-                                'windows-cmd',
-                                'linux-bash',
-                                'macos-zsh'
-                            ]
-                        },
-                        command: {
+            command: {
+                type: 'STRING'
+            },
+            riskAssessment: {
+                type: 'OBJECT',
+                properties: {
+                    score: {
+                        type: 'INTEGER'
+                    },
+                    level: {
+                        type: 'STRING',
+                        enum: [
+                            'Low',
+                            'Moderate',
+                            'Elevated',
+                            'High',
+                            'Critical'
+                        ]
+                    },
+                    potentialDamage: {
+                        type: 'ARRAY',
+                        items: {
                             type: 'STRING'
-                        },
-                        riskAssessment: {
-                            type: 'OBJECT',
-                            properties: {
-                                score: {
-                                    type: 'INTEGER'
-                                },
-                                level: {
-                                    type: 'STRING',
-                                    enum: [
-                                        'Low',
-                                        'Moderate',
-                                        'Elevated',
-                                        'High',
-                                        'Critical'
-                                    ]
-                                },
-                                potentialDamage: {
-                                    type: 'ARRAY',
-                                    items: {
-                                        type: 'STRING'
-                                    }
-                                },
-                                reason: {
-                                    type: 'STRING'
-                                },
-                                recommendation: {
-                                    type: 'STRING'
-                                }
-                            },
-                            required: [
-                                'score',
-                                'level',
-                                'potentialDamage',
-                                'reason',
-                                'recommendation'
-                            ]
                         }
                     },
-                    required: [
-                        'platform',
-                        'command',
-                        'riskAssessment'
-                    ]
-                }
+                    reason: {
+                        type: 'STRING'
+                    },
+                    recommendation: {
+                        type: 'STRING'
+                    }
+                },
+                required: [
+                    'score',
+                    'level',
+                    'potentialDamage',
+                    'reason',
+                    'recommendation'
+                ]
             }
         },
-        required: ['commands']
+        required: ['command', 'riskAssessment']
     };
 
     const response = await ai.models.generateContent({
@@ -82,23 +76,19 @@ async function generateCommand(prompt) {
             You are Prompt2CLI, a terminal command generation
             and safety assessment assistant.
 
+            Selected shell: ${selectedShell.name} (${shell})
+
+            Generate exactly one command for the selected shell only.
+            Do not include commands for any other shell or platform.
+
             User request:
             ${prompt}
 
-            Generate an appropriate command for each of these
-            environments:
-            1. Windows PowerShell
-            2. Windows CMD
-            3. Linux Bash
-            4. macOS Zsh
-
-            For every command:
-            - Generate platform-specific syntax.
-            - Assess the potential damage if executed without review.
-            - Give a risk score from 1 to 10.
-            - Explain the reason for the score.
-            - List possible consequences.
-            - Recommend precautions before execution.
+            Use syntax specific to ${selectedShell.name}.
+            Assess the potential damage of this command if executed
+            without review. Give a risk score from 1 to 10, explain
+            the reason, list possible consequences, and recommend
+            precautions before execution.
 
             Risk levels:
             1-2: Low

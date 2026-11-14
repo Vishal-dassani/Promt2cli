@@ -18,9 +18,7 @@ const NavBar = () => {
           <Link className="text-sm text-gray-600 transition hover:text-violet-700" to="/contact">
             Contact
           </Link>
-          <a className="text-sm text-gray-600 hover:text-gray-900" href="#contact">
-            Login/Signup
-          </a>
+         
         </div>
       </div>
     </nav>
