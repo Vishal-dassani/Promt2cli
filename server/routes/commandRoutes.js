@@ -43,22 +43,12 @@ router.post('/generate', async (req, res) => {
         var statusCode = 500;
         var errorMessage = 'Failed to generate command';
 
-        if (error && error.name === 'ApiError') {
-            if (Number.isInteger(error.status) && error.status >= 400 && error.status <= 599) {
-                statusCode = error.status;
-            }
+        if (error && Number.isInteger(error.status) && error.status >= 400 && error.status <= 599) {
+            statusCode = error.status;
+        }
 
-            try {
-                const upstreamError = JSON.parse(error.message);
-                const description = upstreamError.error?.message || upstreamError.message;
-                if (typeof description === 'string' && description.trim()) {
-                    errorMessage = description;
-                }
-            } catch {
-                if (typeof error.message === 'string' && error.message.trim()) {
-                    errorMessage = error.message;
-                }
-            }
+        if (error && typeof error.message === 'string' && error.message.trim()) {
+            errorMessage = error.message;
         }
         
 

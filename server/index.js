@@ -15,7 +15,7 @@ const allowedOrigins = (process.env.CLIENT_URL ||
 app.use(cors({ origin: allowedOrigins }))
 app.use(express.json({ limit: '1mb' }))
 
-console.log("Gemini key loaded:", !!process.env.GEMINI_API_KEY);
+console.log("Requesty key loaded:", !!process.env.REQUESTY_API_KEY);
 app.use('/api/commands', commandRoutes);
 
 

@@ -5,20 +5,20 @@
 **Status:** Current implementation, with planned features identified
 **Frontend:** React + Vite
 **Backend:** Node.js + Express
-**AI Provider:** Google Gemini
+**AI Provider:** Requesty AI router (OpenAI-compatible API)
 
 ---
 
 ## 1. Overview
 
-Prompt2CLI accepts a natural-language request and a selected shell, asks Gemini
-to generate a command specifically for that shell, and returns the command and
+Prompt2CLI accepts a natural-language request and a selected shell, asks a
+Requesty-routed model to generate a command specifically for that shell, and returns the command and
 its risk assessment to the frontend. The application does not execute generated
 commands.
 
 The browser communicates with the Express API. During local development, the
 Vite development server proxies `/api` requests to the backend. The backend
-keeps the Gemini API key and performs AI requests.
+keeps the Requesty API key and performs AI requests.
 
 Authentication, persistent user accounts, and generation limits are not part
 of the current implementation.
@@ -48,14 +48,14 @@ of the current implementation.
                                    | generateCommand(prompt, shell)
                                    v
                          +-------------------+
-                         | Gemini AI service |
+                         | Requesty AI service |
                          | One shell-specific|
                          | command + risk    |
                          +---------+---------+
                                    |
                                    v
                          +-------------------+
-                         | Google Gemini API |
+                         | Requesty router API |
                          +-------------------+
 
                          API response
@@ -80,7 +80,7 @@ Relevant environment variables:
 |---|---|
 | `PORT` | Express listening port; defaults to `5000` |
 | `CLIENT_URL` | Comma-separated browser origins allowed by CORS |
-| `GEMINI_API_KEY` | Server-side Gemini credential |
+| `REQUESTY_API_KEY` | Server-side Requesty API credential |
 
 ### Frontend
 
@@ -94,7 +94,7 @@ Outside development, `VITE_API_BASE_URL` supplies the API base URL.
 
 The frontend offers these shell values:
 
-| Request `shell` | Shell sent to Gemini |
+| Request `shell` | Shell sent to the Requesty model |
 |---|---|
 | `powershell` | Windows PowerShell |
 | `bash` | Linux Bash |
@@ -122,11 +122,13 @@ rejected with HTTP 400.
 1. The command route validates the prompt and shell.
 2. The route calls `generateCommand(prompt, shell)` in the AI service.
 3. The service maps the shell value to a human-readable shell name, includes
-   the selected shell in the Gemini prompt, and asks for a command for that
-   shell only.
-4. Gemini is asked to return structured JSON containing one `command` and its
-   `riskAssessment` (`score`, `level`, `potentialDamage`, `reason`, and
-   `recommendation`).
+   the selected shell in the Requesty chat messages, and asks the configured
+   model for a command for that shell only.
+4. The service calls Requesty's OpenAI-compatible chat completions endpoint
+   using `nvidia/nemotron-3.5-lightning-30b-a3b`. It requests a JSON response
+   containing one `command` and its `riskAssessment` (`score`, `level`,
+   `potentialDamage`, `reason`, and `recommendation`), then validates the
+   returned structure.
 5. The route returns the generated command and assessment to the frontend.
    If the command is missing, it returns HTTP 502.
 6. The frontend displays the command. It does not execute it.
@@ -150,7 +152,7 @@ Example success response:
 ```
 
 AI provider failures are logged on the server and returned as an error
-response. The Gemini credential is never sent to the frontend.
+response. The Requesty credential is never sent to the frontend.
 
 ## 5. Current Backend Structure
 
@@ -169,7 +171,7 @@ server/
 |---|---|
 | `server/index.js` | Configure and start Express; mount routes and middleware |
 | `server/routes/commandRoutes.js` | Validate generation requests and shape API responses |
-| `server/services/aiService.js` | Map shell values, call Gemini, and parse structured output |
+| `server/services/aiService.js` | Map shell values, call Requesty, and validate structured output |
 | `server/.env` | Hold local server configuration and secrets; do not commit |
 
 The React app and its API client are under `client/`. Authentication, database,
@@ -178,7 +180,7 @@ implemented.
 
 ## 6. Error Handling and Security
 
-- Keep `GEMINI_API_KEY` on the server; do not expose it in Vite environment
+- Keep `REQUESTY_API_KEY` on the server; do not expose it in Vite environment
   variables or frontend bundles.
 - Validate the prompt and allow only the supported shell values at the API
   boundary.
@@ -210,8 +212,8 @@ than treated as existing behavior.
 |---|---|---|
 | ADR-01 | Use React and Vite for the frontend | Supports the current interactive client and local development workflow |
 | ADR-02 | Use Express for the backend API | Provides a lightweight HTTP boundary for frontend requests |
-| ADR-03 | Call Gemini from a backend service | Keeps the provider credential off the client and isolates AI integration |
-| ADR-04 | Pass the selected shell through the API to Gemini | Generates only the syntax the user requested |
+| ADR-03 | Call Requesty through the OpenAI-compatible SDK from a backend service | Keeps the provider credential off the client and isolates AI integration |
+| ADR-04 | Pass the selected shell through the API to the Requesty model | Generates only the syntax the user requested |
 | ADR-05 | Require structured output for the command and risk assessment | Gives the frontend a predictable response shape |
 | ADR-06 | Never execute generated commands automatically | Keeps execution under the user's control |
 | ADR-07 | Proxy `/api` through Vite in development | Avoids browser cross-origin requests during local development |
